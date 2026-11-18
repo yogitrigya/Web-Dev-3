@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Campus Real-Time Notification Monitor</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #121212; color: #f1f1f1; padding: 2rem; max-width: 720px; margin: auto; }
+    input, button { padding: 0.6rem; border-radius: 6px; border: 1px solid #333; background: #1e1e1e; color: #fff; }
+    input { width: 70%; }
+    button { cursor: pointer; background: #2563eb; border: none; font-weight: 600; }
+    #feed { margin-top: 1.5rem; border: 1px solid #2e2e2e; border-radius: 8px; padding: 1rem; min-height: 240px; background: #181818; }
+    .item { padding: 0.6rem; border-bottom: 1px solid #2a2a2a; }
+  </style>
+</head>
+<body>
+  <h2>University Campus — Live Socket.IO Feed</h2>
+  <p>Paste a valid JWT Access Token from <code>POST /api/auth/login</code> to subscribe to real-time campus announcements and attendance alerts:</p>
+  <input id="tokenInput" placeholder="Paste Bearer accessToken here..." />
+  <button onclick="connectSocket()">Connect</button>
+  <div id="feed"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const feed = document.getElementById('feed');
+    function logEvent(label, text) {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}] ${label}:</strong> ${text}`;
+      feed.prepend(div);
+    }
+
+    function connectSocket() {
+      const token = document.getElementById('tokenInput').value.trim();
+      const socket = io({ auth: { token } });
+
+      socket.on('connect', () => logEvent('CONNECTED', `Socket ID ${socket.id}`));
+      socket.on('connect_error', (err) => logEvent('ERROR', err.message));
+      socket.on('newAnnouncement', (data) =>
+        logEvent(`ANNOUNCEMENT (${data.scope.toUpperCase()})`, `${data.title} — ${data.message}`)
+      );
+      socket.on('attendanceAlert', (data) =>
+        logEvent('ATTENDANCE ALERT', `${data.courseCode} (${data.section}) marked as ${data.status}`)
+      );
+    }
+  </script>
+</body>
+</html>
